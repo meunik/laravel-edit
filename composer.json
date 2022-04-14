@@ -1,12 +1,12 @@
 {
     "name": "meunik/laravel-edit",
     "description": "Automates table editing based on request format",
+    "keywords": ["laravel", "Edit", "Edition"],
+    "license": "MIT",
     "require": {
         "php": ">=5.6",
         "nesbot/carbon": "^2.16"
     },
-    "keywords": ["laravel", "Edit", "Edition"],
-    "license": "MIT",
     "authors": [
         {
             "name": "Marcos Paulo",
