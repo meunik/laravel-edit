@@ -1,0 +1,22 @@
+{
+    "name": "meunik/laravel-edit",
+    "description": "Automates table editing based on request format",
+    "require": {
+        "php": ">=5.6",
+        "nesbot/carbon": "^2.16"
+    },
+    "keywords": ["laravel", "Edit", "Edition"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Marcos Paulo",
+            "email": "marcostrab@hotmail.com",
+            "homepage": "https://github.com/meunik"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Edita\\": "src"
+        }
+    }
+}
