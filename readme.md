@@ -14,14 +14,20 @@ Require this package in your composer.json and update composer. This will downlo
 Ainda tenho q fazer.
 
 ```php
-    EditExemple::table(TableModel::class)->values($request)->notChange('column1', 'column2')->run()
+    EditExemple::table(TableModel::class)->values($request)->run();
+```
+
+If you don't want to change a column only at this time.
+
+```php
+    EditExemple::table(TableModel::class)->values($request)->notChange('column1', 'column2')->run();
 ```
 
 ## Configuration
 
 Ainda tenho q fazer tbm.
 
-Criar um Modelo
+Create a Model.
 
 ```php
     <?php
