@@ -18,5 +18,7 @@
         "psr-4": {
             "Meunik\\Edit\\": "src/"
         }
-    }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }
