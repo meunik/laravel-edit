@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Service\edit;
+namespace Meunik\Edit;
 
 use Carbon\Carbon;
 

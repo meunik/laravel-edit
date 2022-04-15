@@ -1,8 +1,6 @@
 <?php
 
-namespace App\Service\Editar;
-
-use Src\EditService;
+namespace Meunik\Edit;
 
 class Edit
 {

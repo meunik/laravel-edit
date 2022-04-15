@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Service\Mandados;
+namespace Meunik\Edit;
 
-use Src\Edit;
+use Meunik\Edit\Edit;
 
 class EditExemple extends Edit
 {
