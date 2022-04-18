@@ -239,6 +239,8 @@ class EditService
         if ($this->exception) {
             $exception = new $this->exception;
             return $exception->exception($table, $values, $camelCase, $create);
+        } else {
+            return false;
         }
         return $this;
     }
