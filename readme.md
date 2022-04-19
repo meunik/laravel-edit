@@ -59,7 +59,7 @@ If you don't want to change a column only at this time.
 
 Create a Model.
 
-É obrigatório ter no mínimo esse modelo.
+It is mandatory to have at least this model.
 ```php
     <?php
 
@@ -73,7 +73,7 @@ Create a Model.
     }
 ```
 
-Definir nomes de colunas e nomes de relacionamentos que por padrão não podem ser alterados.
+Define column names and relationship names that by default cannot be changed.
 ```php
     protected $columnsCannotChange_defaults = [
         'id',
