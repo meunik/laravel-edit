@@ -52,19 +52,7 @@ class EditExemple extends Edit
      */
     public function antes($tabela)
     {
-        $listarSessao = session()->get('listarSessao');
-        $this->user = clone $listarSessao->dadosUsuario;
-
-        $this->documentoId($tabela);
-
-        $count = count($this->tabelaAntiga);
-
-        $this->tabelaAntiga[$count] = clone $tabela;
-
-        $this->tabelaAntigaKey = $count;
-        $this->tabelaAntigaKeysArray[] = $count;
-
-        return $this;
+        //
     }
 
     /**
@@ -73,25 +61,7 @@ class EditExemple extends Edit
      */
     public function depois($tabela)
     {
-        $tabelaAntiga = $this->tabelaAntiga[$this->tabelaAntigaKey];
-
-        foreach ($tabela->toArray() as $key => $value) {
-
-            if ($key === 'id') continue;
-            if (is_array($value)) continue;
-            if (in_array($key, $this->ignorarHistoric)) continue;
-
-            if ($tabelaAntiga[$key] != $value) {
-
-                self::historicoEdit([
-                    'tabela_alterado_id' => $tabela['id'],
-                    'tabela_alterada' => $tabela->getTable(),
-                    'coluna_alterada' => $key,
-                    'conteudo_anterior' => json_encode($tabelaAntiga->$key, JSON_UNESCAPED_UNICODE),
-                    'conteudo_alterado_para' => json_encode($value, JSON_UNESCAPED_UNICODE)
-                ]);
-            }
-        }
+        //
     }
 
     /**
