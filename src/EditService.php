@@ -64,7 +64,7 @@ class EditService
      */
     private function update($table, $values)
     {
-        $relationships = $this->relationshipsList($values);
+        $relationships = $this->relationshipsList($table, $values);
         $keysEdit = $this->clean($values, $relationships);
 
         $before = $this->before($table, $values);
@@ -75,7 +75,6 @@ class EditService
             if ($exception) continue;
 
             if ($this->date($table[$item]) != $values[$item]) $table[$item] = $values[$item];
-            // if (array_key_exists($item, $table->toArray())) unset($table[$item]);
         }
 
         $this->after($table, $values, $before);
@@ -90,20 +89,19 @@ class EditService
     {
         if (count($relationships) == 0) return $table;
 
-        foreach ($relationships as $item) {
+        foreach ($relationships as $key => $value) {
 
-            $exception = $this->exception($table, $values, $item);
+            $exception = $this->exception($table, $values, $key);
             if ($exception) continue;
 
-            $camelCase = $this->snakeCaseToCamelCase($item);
+            $camelCase = $this->snakeCaseToCamelCase($key);
 
-            if (is_null($table[$camelCase])) continue;
-            if (!isset($values[$item])) continue;
+            if (!isset($values[$key])) continue;
 
-            if (isset($table[$camelCase][0]) && is_object($table[$camelCase][0])) {
-                $this->arrayObjects($table, $values, $item);
+            if ($this->is_multi($value)) {
+                $this->arrayObjects($table, $values, $key);
             } else {
-                $this->update($table[$camelCase], $values[$item], $this->relationshipsList($table[$camelCase]));
+                $this->update($table[$camelCase], $values[$key]);
             }
 
         }
@@ -111,32 +109,46 @@ class EditService
         return $relationships;
     }
 
+    private function is_multi($relationshipValue) {
+        return is_array($relationshipValue);
+    }
+
     private function arrayObjects($table, $values, $relationship)
     {
         $camelCase = $this->snakeCaseToCamelCase($relationship);
 
-        $countTable = count($table[$camelCase]);
-        $countValues = count($values[$relationship]);
+        if (count($table->toArray())<=0) return false;
 
-        $difference = $countValues - $countTable;
+        $tableCollection = collect($table[$camelCase]);
+        $valuesCollection = collect($values[$relationship]);
 
-        $register = array_slice($values[$relationship], -$difference, $difference, true);
-        $edit = array_slice($values[$relationship], 0, $countTable, true);
+        $tableRelationship = $table->relationship;
+        if (is_null($tableRelationship)) abort(400, "Parameter 'relationship' not found in the model");
 
-        // Multiple relationship registration is currently disabled
-        // if (count($register) != 0) $this->createMissingObjectInObjectArrays($table, $register, $relationship);
+        $tableRelationshipModel = new $tableRelationship[$camelCase][0];
 
-        if (count($edit) != 0) {
+        $keyName = $tableRelationshipModel->getKeyName();
+
+        if (!is_null($table[$camelCase])) {
             foreach ($table[$camelCase] as $key => $object) {
-                if (!isset($values[$relationship][$key])) {
-                    $this->deleteMissingObjectInObjectArrays($table, $relationship, $key, $object);
-                    continue;
-                }
 
-                $this->update($object, $values[$relationship][$key]);
+                if ($valuesCollection->contains($keyName, $object[$keyName]) == false) $this->deleteMissingObjectInObjectArrays($table, $relationship, $key, $object);
+
+                if ($valuesCollection->contains($keyName, $object[$keyName])) {
+                    $where = $valuesCollection->where($keyName, $object->$keyName);
+
+                    if ($where->count()>0) {
+                        $value = array_values($where->all())[0];
+                        $this->update($object, $value);
+                    }
+                }
             }
         }
-        return $table;
+
+        foreach ($values[$relationship] as $key => $object) {
+            if (isset($object[$keyName]) || !isset($tableRelationship[$camelCase])) continue;
+            $create = $table->$camelCase()->create($object);
+        }
     }
 
     private function createMissingObjectInObjectArrays($table, $register, $relationship)
@@ -162,26 +174,29 @@ class EditService
     private function removeRelationships(Array $table, $relationships)
     {
         if ($relationships)
-            foreach ($relationships as $item)
-                if (array_key_exists($item, $table)) unset($table[$item]);
+            foreach ($relationships as $key => $item)
+                if (array_key_exists($key, $table)) unset($table[$key]);
 
         return $table;
     }
 
-    private function relationshipsList($table)
+    private function relationshipsList($table, $values)
     {
-        $relationship = [];
-        foreach ($table as $key => $value) {
-            if (is_array($value) && (!in_array($key, $this->columnsCannotChange_defaults)) && (!in_array($key, $this->relationshipsCannotChangeCameCase_defaults))) {
-                $relationship[] = $key;
+        $tableRelationship = $table->relationship;
+
+        $relationships = [];
+        foreach ($values as $key => $value) {
+            if ((!in_array($key, $this->columnsCannotChange_defaults)) && (!in_array($key, $this->relationshipsCannotChangeCameCase_defaults)) && (in_array($key, array_keys($tableRelationship)))) {
+                $relationships[$key] = $tableRelationship[$key];
             }
         }
-        return $relationship;
+        return $relationships;
     }
 
     private function deleteMissingObjectInObjectArrays($table, $relationship, $key, $object)
     {
         if ($this->deleteMissingObjectInObjectArrays) {
+            if (isset($object['pivot'])) $object['pivot']->delete();
             $object->delete();
             unset($table[$relationship][$key]);
         }

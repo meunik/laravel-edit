@@ -57,6 +57,15 @@ If you don't want to change a column only at this time.
     NameEditExempleModel::table(TableModel::class)->values($request)->notChange('column1', 'column2')->run();
 ```
 
+No caso de uso de multi relacionamentos no model das tabelas deve
+
+```php
+    public $relationship = [
+        'relationshipUm' => RelationshipUm::class,
+        'relationshipDois' => [RelationshipDois::class], // colocar dentro de um array caso o relacionamento seja array de objetos
+    ];
+```
+
 ## Model Configuration
 
 Create a Model.
