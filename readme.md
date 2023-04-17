@@ -14,7 +14,7 @@ Editing an establishment's table, request example.
         {
             "id": 1,
             "number": "(00) 00000-0000",
-        }
+        },
         {
             "id": 2,
             "numero": "(00) 00000-0000",
