@@ -1,6 +1,6 @@
 <?php
 
-namespace Meunik\Edit;
+namespace App\Service\Edita;
 
 use Carbon\Carbon;
 
@@ -85,19 +85,26 @@ class EditService
         return $this->table;
     }
 
+    /**
+     * $table = new values
+     * $values = old values
+     * $relationship = Relationship
+     */
     private function relationships($table, $values, $relationships)
     {
         if (count($relationships) == 0) return $table;
 
         foreach ($relationships as $key => $value) {
+            $key = $this->camelCaseToSnake_case($key);
 
             $exception = $this->exception($table, $values, $key);
             if ($exception) continue;
 
-            $camelCase = $this->snakeCaseToCamelCase($key);
+            $camelCase = $this->snake_caseToCamelCase($key);
 
             if (!isset($values[$key])) continue;
 
+            // Checks the type of relationship as defined in the Model
             if ($this->is_multi($value)) {
                 $this->arrayObjects($table, $values, $key);
             } else {
@@ -113,9 +120,14 @@ class EditService
         return is_array($relationshipValue);
     }
 
+    /**
+     * $table = new values
+     * $values = old values
+     * $relationship = Relationship
+     */
     private function arrayObjects($table, $values, $relationship)
     {
-        $camelCase = $this->snakeCaseToCamelCase($relationship);
+        $camelCase = $this->snake_caseToCamelCase($relationship);
 
         if (count($table->toArray())<=0) return false;
 
@@ -174,19 +186,22 @@ class EditService
     private function removeRelationships(Array $table, $relationships)
     {
         if ($relationships)
-            foreach ($relationships as $key => $item)
+            foreach ($relationships as $key => $item) {
+                $key = $this->camelCaseToSnake_case($key);
                 if (array_key_exists($key, $table)) unset($table[$key]);
-
+            }
         return $table;
     }
 
     private function relationshipsList($table, $values)
     {
         $tableRelationship = $table->relationship;
+        $arrayKeys = ($tableRelationship) ? array_keys($tableRelationship) : [];
 
         $relationships = [];
         foreach ($values as $key => $value) {
-            if ((!in_array($key, $this->columnsCannotChange_defaults)) && (!in_array($key, $this->relationshipsCannotChangeCameCase_defaults)) && (in_array($key, array_keys($tableRelationship)))) {
+            $key = $this->snake_caseToCamelCase($key);
+            if ((!in_array($key, $this->columnsCannotChange_defaults)) && (!in_array($key, $this->relationshipsCannotChangeCameCase_defaults)) && (in_array($key, $arrayKeys))) {
                 $relationships[$key] = $tableRelationship[$key];
             }
         }
@@ -220,11 +235,16 @@ class EditService
         }
     }
 
-    private function snakeCaseToCamelCase($string, $countOnFirstCharacter = false)
+    private function snake_caseToCamelCase($string, $countOnFirstCharacter = false)
     {
         $str = str_replace(' ', '', ucwords(str_replace('_', ' ', $string)));
         if (!$countOnFirstCharacter) $str[0] = strtolower($str[0]);
         return $str;
+    }
+
+    private function camelCaseToSnake_case($string, $countOnFirstCharacter = false)
+    {
+        return strtolower( preg_replace( ["/([A-Z]+)/", "/_([A-Z]+)([A-Z][a-z])/"], ["_$1", "_$1_$2"], lcfirst($string) ) );;
     }
 
     /**
