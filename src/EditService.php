@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Service\Edita;
+namespace Meunik\Edit;
 
 use Carbon\Carbon;
 
@@ -36,7 +36,7 @@ class EditService
      */
     public function values($values)
     {
-        $this->values = $this->is_object($values);
+        $this->values = is_object($values) ? $values->toArray() : $values;
         return $this;
     }
 
@@ -120,11 +120,6 @@ class EditService
         return is_array($relationshipValue);
     }
 
-    public function is_object($values)
-    {
-        return is_object($values) ? $values->toArray() : $values;
-    }
-
     /**
      * $table = new values
      * $values = old values
@@ -149,7 +144,7 @@ class EditService
         if (!is_null($table[$camelCase])) {
             foreach ($table[$camelCase] as $key => $object) {
 
-                if ($valuesCollection->contains($keyName, $object[$keyName]) == false)$this->deleteMissingObjectInObjectArrays($table, $relationship, $key, $object);
+                if ($valuesCollection->contains($keyName, $object[$keyName]) == false) $this->deleteMissingObjectInObjectArrays($table, $relationship, $key, $object);
 
                 if ($valuesCollection->contains($keyName, $object[$keyName])) {
                     $where = $valuesCollection->where($keyName, $object->$keyName);
@@ -175,7 +170,6 @@ class EditService
 
     private function clean($values, $tableRelationships)
     {
-        $values = $this->is_object($values);
         $keysEdit = $this->removeRelationships($values, $tableRelationships);
         $keysEdit = $this->removeColumnsCannotChange($keysEdit);
         return array_keys($keysEdit);
@@ -219,8 +213,8 @@ class EditService
         if ($this->deleteMissingObjectInObjectArrays) {
             if (isset($object['pivot'])) $object['pivot']->delete();
             $object->delete();
-            $camelCase = $this->snake_caseToCamelCase($relationship);
-            unset($table[$camelCase][$key]);
+            // $camelCase = $this->snake_caseToCamelCase($relationship);
+            unset($table[$relationship][$key]);
         }
     }
 
