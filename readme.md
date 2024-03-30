@@ -34,7 +34,7 @@ Editing an establishment's table, request example.
 ```
 First you must inform the Model of the table `NameEditExampleModel::table(TableModel::class)` which is the starting point, in the case of the above json it is `EstablishmentExample::class`, then it will be read key by key, if the value of one of these keys is an object, or an array, or an array of objects, the key will initially be considered with a table relationship, then this same key will be validated using [laravel's own Eloquent](https://laravel.com/docs/9.x/eloquent-relationships).
 
-> ## For now one-to-many relationships are under construction
+> Suport `$appends`
 
 ## Installation
 
@@ -65,6 +65,13 @@ In the case of using multi relationships in the table model, you must:
         'relationshipOne' => RelationshipOne::class,
         'relationshipTwo' => [RelationshipTwo::class], // put it inside an array if the relationship is an array of objects
     ];
+```
+
+If you want to ignore a column or relationship in a specific table, add this to the model of that table:
+
+```php
+    public $ignoredColumns = ['column1','column2'];
+    public $ignoredRelationships = ['relationship1','relationship2'];
 ```
 
 ## Model Configuration

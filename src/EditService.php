@@ -65,7 +65,19 @@ class EditService
     private function update($table, $values)
     {
         $relationships = $this->relationshipsList($table, $values);
-        $keysEdit = $this->clean($values, $relationships);
+
+        $ignoredColumns = $table->ignoredColumns ?: [];
+        $ignoredRelationships = $table->ignoredRelationships ?: [];
+        $appends = $table->appends ?: [];
+        $hidden = $table->hidden ?: [];
+        if ($table->pivot) {
+            foreach ($appends as $value) {
+                $table->pivot->$value = $values[$value];
+                $table->pivot->save();
+            }
+        }
+        $ignoreds = array_merge($ignoredColumns, $ignoredRelationships, $appends, $hidden);
+        $keysEdit = $this->clean($values, $relationships, $ignoreds);
 
         $before = $this->before($table, $values);
 
@@ -168,18 +180,21 @@ class EditService
         if ($this->exception) $this->exception($table, $register, $relationship, true);
     }
 
-    private function clean($values, $tableRelationships)
+    private function clean($values, $tableRelationships, $ignoreds)
     {
         $keysEdit = $this->removeRelationships($values, $tableRelationships);
-        $keysEdit = $this->removeColumnsCannotChange($keysEdit);
+        $keysEdit = $this->removeColumnsCannotChange($keysEdit, $ignoreds);
         return array_keys($keysEdit);
     }
 
-    private function removeColumnsCannotChange($table)
+    private function removeColumnsCannotChange($table, $ignoreds)
     {
-        foreach ($this->columnsCannotChange_defaults as $item) {
+        foreach ($this->columnsCannotChange_defaults as $item)
             if (array_key_exists($item, $table)) unset($table[$item]);
-        }
+
+        foreach ($ignoreds as $item)
+            if (array_key_exists($item, $table)) unset($table[$item]);
+
         return $table;
     }
 
