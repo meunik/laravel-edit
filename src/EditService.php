@@ -68,12 +68,14 @@ class EditService
 
         $ignoredColumns = $table->ignoredColumns ?: [];
         $ignoredRelationships = $table->ignoredRelationships ?: [];
-        $appends = $table->appends ?: [];
         $hidden = $table->hidden ?: [];
+        $appends = $table->appends ?: [];
         if ($table->pivot) {
             foreach ($appends as $value) {
-                $table->pivot->$value = $values[$value];
-                $table->pivot->save();
+                if (array_key_exists($value, $table->pivot->getOriginal()) && !in_array($value, $ignoredColumns)) {
+                    $table->pivot->$value = $values[$value];
+                    $table->pivot->save();
+                }
             }
         }
         $ignoreds = array_merge($ignoredColumns, $ignoredRelationships, $appends, $hidden);
@@ -171,7 +173,18 @@ class EditService
 
         foreach ($values[$relationship] as $key => $object) {
             if (isset($object[$keyName]) || !isset($tableRelationship[$camelCase])) continue;
-            $create = $table->$camelCase()->create($object);
+
+
+            $tableRelationship = $table->relationship[$camelCase][0];
+            $ignoredColumns = $table->ignoredColumns ?: [];
+
+            $create = $tableRelationship::create($object);
+            if ($create->appends)
+                foreach ($create->appends as $value)
+                    if (array_key_exists($value, $table->pivot->getOriginal()) && !in_array($value, $ignoredColumns))
+                        $table->$camelCase()->attach($create->id, [$value => $object[$value]]);
+
+            else $table->$camelCase()->attach($create->id);
         }
     }
 

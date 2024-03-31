@@ -34,7 +34,7 @@ Editing an establishment's table, request example.
 ```
 First you must inform the Model of the table `NameEditExampleModel::table(TableModel::class)` which is the starting point, in the case of the above json it is `EstablishmentExample::class`, then it will be read key by key, if the value of one of these keys is an object, or an array, or an array of objects, the key will initially be considered with a table relationship, then this same key will be validated using [laravel's own Eloquent](https://laravel.com/docs/9.x/eloquent-relationships).
 
-> Suport `$appends`
+> Supports `$appends`, but the `$appends` compulsorily have the same name as the column in the table
 
 ## Installation
 
