@@ -6,18 +6,22 @@ use Carbon\Carbon;
 
 class EditService
 {
-    public $newTableClass;
+    public $model;
+    public $editModel;
+    public $laravelEdit;
+
     public $values;
     public $table;
     public $tableRelationships;
-    public $before = false;
-    public $after = false;
-    public $exception = false;
 
     public $columnsCannotChange_defaults = ['pivot','created_at','updated_at'];
     public $relationshipsCannotChangeCameCase_defaults = ['pivot'];
-    public $createMissingObjectInObjectArrays = false;
-    public $deleteMissingObjectInObjectArrays = false;
+    public $deleteMissingObjectInObjectArrays = true;
+
+    public function teste()
+    {
+        return 'teste';
+    }
 
     /**
      * Optional
@@ -46,13 +50,13 @@ class EditService
      */
     public function table($table)
     {
-        $this->newTableClass = $table;
+        $this->model = $table;
         return $this;
     }
 
     public function run()
     {
-        $table = $this->newTableClass;
+        $table = $this->model;
         $this->table = ($table::find($this->values['id'])) ?: abort(400, 'Id not found.');
         return $this->update($this->table, $this->values);
     }
@@ -68,8 +72,8 @@ class EditService
 
         $ignoredColumns = $table->ignoredColumns ?: [];
         $ignoredRelationships = $table->ignoredRelationships ?: [];
-        $hidden = $table->hidden ?: [];
-        $appends = $table->appends ?: [];
+        $hidden = $table->getHidden() ?: [];
+        $appends = $table->getAppends() ?: [];
         if ($table->pivot) {
             foreach ($appends as $value) {
                 if (array_key_exists($value, $table->pivot->getOriginal()) && !in_array($value, $ignoredColumns)) {
@@ -81,18 +85,18 @@ class EditService
         $ignoreds = array_merge($ignoredColumns, $ignoredRelationships, $appends, $hidden);
         $keysEdit = $this->clean($values, $relationships, $ignoreds);
 
-        $before = $this->before($table, $values);
+        $before = $this->beforeService($table, $values);
 
         // FACT EDITING
         foreach ($keysEdit as $item) {
-            $exception = $this->exception($table, $values, $item);
+            $exception = $this->exceptionService($table, $values, $item);
             if ($exception) continue;
 
             if ($this->date($table[$item]) != $values[$item]) $table[$item] = $values[$item];
         }
 
-        $this->after($table, $values, $before);
         $this->save($table);
+        $this->afterService($table, $values, $before);
 
         $this->relationships($table, $values, $relationships);
 
@@ -111,7 +115,7 @@ class EditService
         foreach ($relationships as $key => $value) {
             $key = $this->camelCaseToSnake_case($key);
 
-            $exception = $this->exception($table, $values, $key);
+            $exception = $this->exceptionService($table, $values, $key);
             if ($exception) continue;
 
             $camelCase = $this->snake_caseToCamelCase($key);
@@ -179,18 +183,13 @@ class EditService
             $ignoredColumns = $table->ignoredColumns ?: [];
 
             $create = $tableRelationship::create($object);
-            if ($create->appends)
-                foreach ($create->appends as $value)
+            if ($create->getAppends())
+                foreach ($create->getAppends() as $value)
                     if (array_key_exists($value, $table->pivot->getOriginal()) && !in_array($value, $ignoredColumns))
                         $table->$camelCase()->attach($create->id, [$value => $object[$value]]);
 
             else $table->$camelCase()->attach($create->id);
         }
-    }
-
-    private function createMissingObjectInObjectArrays($table, $register, $relationship)
-    {
-        if ($this->exception) $this->exception($table, $register, $relationship, true);
     }
 
     private function clean($values, $tableRelationships, $ignoreds)
@@ -280,11 +279,20 @@ class EditService
      * Optional
      * Performs treatment before the update.
      */
-    private function before($table, $values)
+    private function beforeService($table, $values)
     {
-        if ($this->before) {
-            $before = new $this->before;
-            return $before->before($table, $values);
+        $table = $this->hidden($table);
+
+        $this->laravelEdit = ($this->laravelEdit)?: new LaravelEdit;
+        $this->laravelEdit->table = $table;
+        $this->laravelEdit->values = $values;
+
+        if (method_exists($table, 'before')) {
+            $table->laravelEdit = $this->laravelEdit;
+            return $table->before();
+        } elseif ($this->editModel && method_exists($this->editModel, 'before')) {
+            $this->editModel->laravelEdit = $this->laravelEdit;
+            return $this->editModel->before();
         }
         return $this;
     }
@@ -293,24 +301,88 @@ class EditService
      * Optional
      * Performs after-update handling.
      */
-    private function after($table, $values, $before)
+    private function afterService($table, $values, $before)
     {
-        if ($this->after) return $before->after($table, $values);
-    }
+        $table = $this->hidden($table);
 
-    private function exception($table, $values, $camelCase, $create = false)
-    {
-        if ($this->exception) {
-            $exception = new $this->exception;
-            return $exception->exception($table, $values, $camelCase, $create);
-        } else {
-            return false;
+        $this->laravelEdit = ($this->laravelEdit)?: new LaravelEdit;
+        $this->laravelEdit->table = $table;
+        $this->laravelEdit->values = $values;
+        $this->laravelEdit->before = $before;
+
+        if (method_exists($table, 'after')) {
+            $table->laravelEdit = $this->laravelEdit;
+            return $table->after();
+        } elseif ($this->editModel && method_exists($this->editModel, 'after')) {
+            $this->editModel->laravelEdit = $this->laravelEdit;
+            return $this->editModel->after();
         }
         return $this;
     }
 
+    private function exceptionService($table, $values, $attribute, $create = false)
+    {
+        $table = $this->hidden($table);
+
+        $this->laravelEdit = ($this->laravelEdit)?: new LaravelEdit;
+        $this->laravelEdit->table = $table;
+        $this->laravelEdit->values = $values;
+        $this->laravelEdit->attribute = $attribute;
+        $this->laravelEdit->create = $create;
+
+        if (method_exists($table, 'exception')) {
+            $table->laravelEdit = $this->laravelEdit;
+            $table->exception();
+        } elseif ($this->editModel && method_exists($this->editModel, 'exception')) {
+            $this->editModel->laravelEdit = $this->laravelEdit;
+            $this->editModel->exception();
+        } else return false;
+        return true;
+    }
+
+    /**
+     * Substitui o valor pelo valor tratado caso exista essa função.
+     *
+     * @param  Model  $table
+     * @param  array  $values
+     * @param  array  $keysEdit
+     * @return mixed
+     */
+    private function treatmentService($table, $values, $keysEdit)
+    {
+        $table = $this->hidden($table);
+
+        $this->laravelEdit = ($this->laravelEdit)?: new LaravelEdit;
+        $this->laravelEdit->table = $table;
+        $this->laravelEdit->values = $values;
+        $this->laravelEdit->keysEdit = $keysEdit;
+
+        if (method_exists($table, 'treatment')) {
+            $table->laravelEdit = $this->laravelEdit;
+            $table->treatment();
+        } elseif ($this->editModel && method_exists($this->editModel, 'treatment')) {
+            $this->editModel->laravelEdit = $this->laravelEdit;
+            $this->editModel->treatment();
+        } else return false;
+        return true;
+    }
+
+    private function hidden($table)
+    {
+        $hidden = $table->getHidden() ?: [];
+        $table->setHidden(array_merge($hidden, ['laravelEdit']));
+        return $table;
+    }
+
     private function save($table)
     {
-        if (count($table->toArray())>0) $table->save();
+        if (count($table->toArray())>0) {
+            $teste = clone $table;
+            unset($teste['laravelEdit']);
+            unset($teste->laravelEdit);
+            $teste->save();
+        }
     }
 }
+
+class LaravelEdit {}

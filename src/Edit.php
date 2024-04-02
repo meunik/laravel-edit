@@ -2,6 +2,8 @@
 
 namespace Meunik\Edit;
 
+use Meunik\Edit\EditService;
+
 class Edit
 {
     /**
@@ -11,16 +13,22 @@ class Edit
     private $editService;
 
     /**
-     * Enables the possibility of creating objects in multiple relationships.
-     * @var Bool
+     * Stores the Model class.
+     * @var Model
      */
-    protected $createMissingObjectInObjectArrays = false;
+    protected $model;
+
+    /**
+     * Stores the EditModel class.
+     * @var EditModel
+     */
+    protected $editModel;
 
     /**
      * Enables the possibility of deleting objects in multiple relationships.
      * @var Bool
      */
-    protected $deleteMissingObjectInObjectArrays = false;
+    protected $deleteMissingObjectInObjectArrays = true;
 
     /**
      * Defines columns that cannot be changed by default.
@@ -34,32 +42,35 @@ class Edit
      */
     protected $relationshipsCannotChangeCameCase_defaults = [];
 
-    /**
-     * Enable treatments before the update.
-     * @var String|Bool
-     */
-    protected $before = false;
-
-    /**
-     * Enable treatments after update.
-     * @var String|Bool
-     */
-    protected $after = false;
-
-    /**
-     * Enables exception handling.
-     * @var String|Bool
-     */
-    protected $exception = false;
+    public $laravelEdit;
 
 
-    public function __construct() {
+    public function __construct($model=null, $values=null) {
         $this->newEditService();
+        if ($model) $this->model($model);
         $this->attributes();
+        if ($values) $this->editService->values = is_object($values) ? $values->toArray() : $values;
     }
 
     /**
-     * Chama a classe EditService.
+     * Stores the Model class in a variable.
+     * @return void
+     */
+    private function model($model)
+    {
+        $this->model = new $model();
+        $this->editService->model = new $model();
+        $editModel = null;
+        if ($this->model->editModel) $editModel = $this->model->editModel;
+        elseif (class_exists(\App\Models\EditModel::class)) $editModel = \App\Models\EditModel::class;
+        if ($editModel) {
+            $this->editModel = new $editModel();
+            $this->editService->editModel = new $editModel();
+        }
+    }
+
+    /**
+     * Stores the EditService class in a variable.
      * @return void
      */
     private function newEditService()
@@ -73,38 +84,30 @@ class Edit
      */
     private function attributes()
     {
-        $this->createMissingObjectInObjectArrays();
+        if (!$this->editModel) return null;
         $this->deleteMissingObjectInObjectArrays();
         $this->columnsCannotChange_defaults();
         $this->relationshipsCannotChangeCameCase_defaults();
-        $this->beforeAfter();
-        $this->exception();
-    }
-    private function createMissingObjectInObjectArrays()
-    {
-        $this->editService->createMissingObjectInObjectArrays = $this->createMissingObjectInObjectArrays;
     }
     private function deleteMissingObjectInObjectArrays()
     {
-        $this->editService->deleteMissingObjectInObjectArrays = $this->deleteMissingObjectInObjectArrays;
+        if (isset($this->editModel->deleteMissingObjectInObjectArrays))
+            $this->editService->deleteMissingObjectInObjectArrays = $this->editModel->deleteMissingObjectInObjectArrays;
     }
     private function columnsCannotChange_defaults()
     {
-        $this->editService->columnsCannotChange_defaults = array_unique(array_merge($this->columnsCannotChange_defaults, $this->editService->columnsCannotChange_defaults));
+        if (isset($this->editModel->columnsCannotChange_defaults))
+            $this->editService->columnsCannotChange_defaults = array_unique(array_merge(
+                $this->editModel->columnsCannotChange_defaults,
+                $this->editService->columnsCannotChange_defaults
+            ));
     }
     private function relationshipsCannotChangeCameCase_defaults()
     {
-        $this->editService->relationshipsCannotChangeCameCase_defaults = array_unique(array_merge($this->relationshipsCannotChangeCameCase_defaults, $this->editService->relationshipsCannotChangeCameCase_defaults));
-    }
-    private function beforeAfter()
-    {
-        $this->editService->before = $this->before;
-        $this->editService->after = $this->after;
-    }
-
-    private function exception()
-    {
-        $this->editService->exception = $this->exception;
+        if (isset($this->editModel->relationshipsCannotChangeCameCase_defaults))
+            $this->editService->relationshipsCannotChangeCameCase_defaults = array_unique(array_merge(
+                $this->relationshipsCannotChangeCameCase_defaults, $this->editService->relationshipsCannotChangeCameCase_defaults
+            ));
     }
 
 

@@ -7,31 +7,40 @@ use Meunik\Edit\Edit;
 class EditExemple extends Edit
 {
     protected $deleteMissingObjectInObjectArrays = true;
-    // protected $createMissingObjectInObjectArrays = true;
     protected $columnsCannotChange_defaults = [];
     protected $relationshipsCannotChangeCameCase_defaults = [];
 
-    protected $before = self::class;
-    protected $after = self::class;
-    protected $exception = self::class;
-
-    public function before($table, $values)
+    public function before()
     {
+        $table = $this->laravelEdit->table;
+        $values = $this->laravelEdit->values;
+        
         // Code before update.
+        
         return $this;
     }
 
-    public function after($table, $values, $before)
+    public function after()
     {
+        $table = $this->laravelEdit->table;
+        $values = $this->laravelEdit->values;
+        $before = $this->laravelEdit->before;
+        
         // Code after update.
     }
 
-    public function exception($table, $values, $column, $create)
+    public function exception()
     {
         /*
          * Code before update.
          * Example
         */
+
+        $table = $this->laravelEdit->table;
+        $values = $this->laravelEdit->values;
+        $column = $this->laravelEdit->attribute;
+        $create = $this->laravelEdit->create;
+
         switch ($column) {
             case "nameColumnException":
                 return true;
