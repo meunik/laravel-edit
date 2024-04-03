@@ -161,7 +161,28 @@ Add a pre-treatment and a post-treatment.
     }
 ```
 
-Add exceptions. This function is executed before editing, if it returns true, the column name or relationship will be ignored in automatic editing, but it can be edited within this function. If it returns false, the name will be automatically edited.
+Perform treatment of the values before they are edited. This function is executed once before the line editing. It is mandatory to return an array containing the values that will be edited, following this format `['column' => 'value']`. This function replaces the values coming from the `Request`.
+```php
+    public function valuesEdit()
+    {
+        /*
+         * Code before update.
+         * Example
+        */
+
+        $table = $this->laravelEdit->table;
+        $values = $this->laravelEdit->values;
+        $column = $this->laravelEdit->keysEdit;
+
+        return [
+            'column1' => 'value1',
+            'column2' => 'value2'
+            ...
+        ]
+    }
+```
+
+Add exceptions to the columns. This function is executed before the editing of each column, if returned true, the column will be ignored in the editing, but it can be edited within this function. If returned false, the column will be edited automatically. This function does not change the value that will be edited in the column.
 ```php
     public function exception()
     {

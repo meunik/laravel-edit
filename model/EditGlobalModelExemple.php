@@ -4,7 +4,7 @@ namespace Meunik\Edit;
 
 use Meunik\Edit\Edit;
 
-class EditExemple extends Edit
+class EditGlobalModelExemple extends Edit
 {
     protected $deleteMissingObjectInObjectArrays = true;
     protected $columnsCannotChange_defaults = [];
@@ -27,6 +27,18 @@ class EditExemple extends Edit
         $before = $this->laravelEdit->before;
         
         // Code after update.
+    }
+
+    public function valuesEdit()
+    {
+        /*
+         * Code before update.
+         * Example
+        */
+
+        $table = $this->laravelEdit->table;
+        $values = $this->laravelEdit->values;
+        $column = $this->laravelEdit->keysEdit;
     }
 
     public function exception()
