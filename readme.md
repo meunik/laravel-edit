@@ -212,7 +212,7 @@ Add exceptions to the columns. This function is executed before the editing of e
     }
 ```
 
-> The `before()`, `after()` and `exception()` functions can be used within the table's model, in which case it will be specific to manipulating the data of this table.
+> The `before()`, `after()`, `valuesEdit()` and `exception()` functions can be used within the table's model, in which case it will be specific to manipulating the data of this table.
     
 ### License
 
