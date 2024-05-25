@@ -116,12 +116,20 @@ trait Core
             $ignoredColumns = $table->ignoredColumns ?: [];
 
             $create = $tableRelationship::create($object);
-            if ($create->getAppends())
-                foreach ($create->getAppends() as $value)
-                    if (array_key_exists($value, $table->pivot->getOriginal()) && !in_array($value, $ignoredColumns))
-                        $table->$camelCase()->attach($create->id, [$value => $object[$value]]);
 
-            else $table->$camelCase()->attach($create->id);
+            try {
+                /**
+                 * This code attaches new records to the pivot table for each appended field in the $create model that is not in the ignored columns list.
+                 */
+                if ($create->getAppends())
+                    foreach ($create->getAppends() as $value)
+                        if (array_key_exists($value, $table->pivot->getOriginal()) && !in_array($value, $ignoredColumns))
+                            $table->$camelCase()->attach($create->id, [$value => $object[$value]]);
+
+                else $table->$camelCase()->attach($create->id);
+            } catch (\Throwable $th) {
+                $table->$camelCase()->attach($create->id);
+            }
         }
     }
 
@@ -168,17 +176,26 @@ trait Core
         $ignoredColumns = $table->ignoredColumns ?: [];
         $ignoredRelationships = $table->ignoredRelationships ?: [];
         $hidden = $table->getHidden() ?: [];
-        $appends = $table->getAppends() ?: [];
+        try {
+            $appends = $table->getAppends() ?: [];
+        } catch (\Throwable $th) { $appends = []; }
+
         if ($table->pivot) {
+            // Edit appends in pivot table
             foreach ($appends as $value) {
-                if (array_key_exists($value, $table->pivot->getOriginal()) && !in_array($value, $ignoredColumns)) {
+                if ($table->editAppends && array_key_exists($value, $table->pivot->getOriginal()) && !in_array($value, $ignoredColumns)) {
                     $table->pivot->$value = $values[$value];
                     $table->pivot->save();
                 }
             }
         }
 
-        return array_merge($ignoredColumns, $ignoredRelationships, $appends, $hidden);
+        $fillable = $table->getFillable() ?: [];
+        foreach ($values as $coll => $item)
+            if (!in_array($coll, $fillable) && !in_array($coll, $ignoredColumns))
+                $ignoredColumnsNotInFillable[] = $coll;
+
+        return array_merge($ignoredColumns, $ignoredRelationships, $appends, $hidden, $ignoredColumnsNotInFillable);
     }
 
     /**

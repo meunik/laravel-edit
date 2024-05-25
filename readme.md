@@ -62,6 +62,7 @@ First you must add the trait `HasEdit` to the `use` of your Model.
 
         protected $fillable = ['name'];
 
+        public $editAppends = true;
         public $editGlobalModel = EditGlobalModel::class; // You need to set it only if you are going to use Global Model and if it is not in the default \App\Models\EditGlobalModel directory
 
         public $relationship = [

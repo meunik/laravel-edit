@@ -18,6 +18,7 @@ class EditService
     public $table;
     public $tableRelationships;
 
+    public $editAppends = false;
     public $columnsCannotChange_defaults = ['pivot','created_at','updated_at'];
     public $relationshipsCannotChangeCameCase_defaults = ['pivot'];
     public $deleteMissingObjectInObjectArrays = true;

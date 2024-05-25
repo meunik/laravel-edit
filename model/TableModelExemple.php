@@ -13,8 +13,8 @@ class TableModelExemple extends Model
     protected $fillable = ['name'];
 
     // You need to set it only if you are going to use Global Model and if it is not in the default \App\Models\EditGlobalModel directory
-    public $editGlobalModel = EditGlobalModel::class;
-
+    public $editModel = EditGlobalModel::class;
+    public $editAppends = true;
     public $ignoredColumns = ['column1','column2'];
     public $ignoredRelationships = ['relationship1','relationship2'];
 

@@ -25,6 +25,12 @@ class Edit
     protected $editModel;
 
     /**
+     * Stores the EditModel class.
+     * @var EditModel
+     */
+    protected $editAppends = false;
+
+    /**
      * Enables the possibility of deleting objects in multiple relationships.
      * @var Bool
      */
@@ -62,7 +68,7 @@ class Edit
         $this->editService->model = new $model();
         $editModel = null;
         if ($this->model->editModel) $editModel = $this->model->editModel;
-        elseif (class_exists(\App\Models\EditModel::class)) $editModel = \App\Models\EditModel::class;
+        elseif (class_exists(\App\Models\Edition::class)) $editModel = \App\Models\Edition::class;
         if ($editModel) {
             $this->editModel = new $editModel();
             $this->editService->editModel = new $editModel();
@@ -85,9 +91,15 @@ class Edit
     private function attributes()
     {
         if (!$this->editModel) return null;
+        $this->editAppends();
         $this->deleteMissingObjectInObjectArrays();
         $this->columnsCannotChange_defaults();
         $this->relationshipsCannotChangeCameCase_defaults();
+    }
+    private function editAppends()
+    {
+        if (isset($this->editModel->editAppends))
+            $this->editService->editAppends = $this->editModel->editAppends;
     }
     private function deleteMissingObjectInObjectArrays()
     {
